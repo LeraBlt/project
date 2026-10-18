@@ -13,7 +13,7 @@ public abstract class Instrument {
 
     public Instrument(String ticker, String name, Currency currency) {
         if (ticker == null || ticker.isBlank()) {
-            throw new IllegalArgumentException("Ticker cannot be blank");
+            throw new IllegalArgumentException("Тикер не должен быть пустым");
         }
         this.ticker = ticker;
         this.name = name;

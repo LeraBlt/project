@@ -7,10 +7,15 @@ import academy.backend.market_pulse.model.Currency;
 import academy.backend.market_pulse.model.Instrument;
 import academy.backend.market_pulse.repository.InstrumentRepository;
 import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 
+/** Добавляет один инструмент в хранилище текущего запуска программы. */
 @Command(name = "add", description = "Добавление инструмента в репозиторий")
 public class AddCommand implements Callable<Integer> {
+
+    @Option(names = {"-h", "--help"}, usageHelp = true, description = "Показать справку и завершить работу")
+    private boolean helpRequested;
 
     @Parameters(index = "0", description = "Тип инструмента (STOCK, BOND, ETF)")
     private String type;
@@ -32,7 +37,13 @@ public class AddCommand implements Callable<Integer> {
 
     @Override
     public Integer call() {
-        Instrument instrument = InstrumentFactories.create(type, ticker, name, currency);
+        Instrument instrument;
+        try {
+            instrument = InstrumentFactories.create(type, ticker, name, currency);
+        } catch (IllegalArgumentException exception) {
+            // Ошибку создания переводим в тип, который общий обработчик покажет без стека вызовов.
+            throw new CliException(exception.getMessage(), exception);
+        }
         repository.add(instrument);
         System.out.println("Добавлено: " + instrument.getDescription());
         return 0;
