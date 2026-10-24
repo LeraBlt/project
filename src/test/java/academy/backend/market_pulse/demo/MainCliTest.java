@@ -6,9 +6,12 @@ import academy.backend.market_pulse.model.Stock;
 import org.junit.jupiter.api.Test;
 import picocli.CommandLine;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -25,6 +28,7 @@ class MainCliTest {
         assertEquals(0, root.exitCode());
         assertEquals(0, add.exitCode());
         assertTrue(root.output().contains("search"));
+        assertTrue(root.output().contains("quote"));
         assertTrue(add.output().contains("<ticker>"));
     }
 
@@ -70,6 +74,22 @@ class MainCliTest {
 
         assertEquals(0, execute(repository, "search", "AAPL").exitCode());
         assertEquals(1, execute(repository, "search", "MSFT").exitCode());
+    }
+
+    @Test
+    void quoteCommandShowsBothRequestedQuotes() {
+        PrintStream originalOutput = System.out;
+        ByteArrayOutputStream capturedOutput = new ByteArrayOutputStream();
+        try {
+            System.setOut(new PrintStream(capturedOutput, true, StandardCharsets.UTF_8));
+
+            assertEquals(0, Main.execute(new String[]{"quote", "SBER", "GAZP"}));
+            String output = capturedOutput.toString(StandardCharsets.UTF_8);
+            assertTrue(output.contains("SBER: 300 RUB"));
+            assertTrue(output.contains("GAZP: 150 RUB"));
+        } finally {
+            System.setOut(originalOutput);
+        }
     }
 
     private Result execute(String... arguments) {
