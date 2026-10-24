@@ -4,22 +4,16 @@ import academy.backend.market_pulse.model.Currency;
 import academy.backend.market_pulse.model.Instrument;
 import academy.backend.market_pulse.util.Registry;
 
-import java.util.ServiceLoader;
-
 /**
- * Реестр фабрик инструментов. Реализации {@link InstrumentFactory} не регистрируют себя вручную —
- * они обнаруживаются через {@link ServiceLoader} по записи в
- * {@code META-INF/services/academy.backend.market_pulse.factory.InstrumentFactory}. Добавление
- * нового типа инструмента не требует правки этого класса — только новая реализация и строка в
- * файле сервиса.
+ * Выбирает фабрику инструмента по его типу: STOCK, BOND или ETF.
+ * При загрузке классов фабрики регистрируют себя в {@link Registry}.
  */
 public final class InstrumentFactories {
 
     private static final Registry<String, InstrumentFactory> REGISTRY = new Registry<>();
 
     static {
-        // Статический блок фабрики выполняется только при загрузке её класса — форсируем загрузку,
-        // иначе реестр останется пустым (тот же нюанс, что и с DriverManager до JDBC 4.0).
+        // Загрузка класса запускает его статический блок, который добавляет фабрику в реестр.
         loadClass(StockFactory.class);
         loadClass(BondFactory.class);
         loadClass(EtfFactory.class);
@@ -34,7 +28,8 @@ public final class InstrumentFactories {
 
     public static Instrument create(String type, String ticker, String name, Currency currency) {
         InstrumentFactory factory = REGISTRY.find(type.toUpperCase())
-                .orElseThrow(() -> new IllegalArgumentException("Unknown instrument type: " + type));
+                .orElseThrow(() -> new IllegalArgumentException("Неизвестный тип инструмента: " + type
+                        + ". Допустимые типы: STOCK, BOND, ETF"));
         return factory.create(ticker, name, currency);
     }
 

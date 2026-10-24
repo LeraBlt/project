@@ -12,8 +12,12 @@ import academy.backend.market_pulse.repository.InstrumentRepository;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
+/** Показывает инструменты, подходящие под выбранный пользователем фильтр. */
 @Command(name = "list", description = "Список инструментов")
 public class ListCommand implements Callable<Integer> {
+
+    @Option(names = {"-h", "--help"}, usageHelp = true, description = "Показать справку и завершить работу")
+    private boolean helpRequested;
 
     @Option(names = "--type", description = "Фильтр по типу инструмента")
     private String type;
@@ -38,7 +42,13 @@ public class ListCommand implements Callable<Integer> {
 
     @Override
     public Integer call() {
-        InstrumentFilter filter = FilterFactory.create(type, ticker, currency, priceOperator, price);
+        InstrumentFilter filter;
+        try {
+            filter = FilterFactory.create(type, ticker, currency, priceOperator, price);
+        } catch (IllegalArgumentException exception) {
+            // Неверное сочетание параметров фильтра показываем как понятную ошибку команды.
+            throw new CliException(exception.getMessage(), exception);
+        }
 
         for (Instrument instrument : repository) {
             if (filter.matches(instrument)) {
